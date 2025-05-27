@@ -1,59 +1,124 @@
-# MoviesSiteProject
+# What Should I Watch Tonight - Movie Discovery Web App
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.2.13.
+A responsive Angular-based movie discovery application that helps users explore, search, and view details about movies using the TMDB (The Movie Database) API.
 
-## Development server
+## Features
 
-To start a local development server, run:
+- 🎬 Landing page with mood-based movie suggestions
+- 🔍 Advanced search functionality for movies and actors
+- 📱 Responsive design for all devices
+- 🎯 Detailed movie information pages
+- 📺 Movie trailers integration
+- 📝 Personal watchlist functionality
+- ✨ Clean and intuitive user interface
 
-```bash
-ng serve
+## Tech Stack
+
+- **Frontend Framework:** Angular
+- **Styling:** SCSS with BEM methodology
+- **Testing:** Jest + Angular Testing Library
+- **State Management:** NgRx
+- **API Integration:** TMDB API
+- **CI/CD:** GitHub Actions
+
+## Prerequisites
+
+- Node.js (v18 or higher)
+- npm (v9 or higher)
+- Angular CLI
+- TMDB API Key
+
+## Getting Started
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/Jaleelbasha/movies-site-project.git
+   cd movies-site-project
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Configure environment variables:
+   - Create a `.env` file in the root directory
+   - Add your TMDB API key:
+     ```
+     TMDB_API_KEY=your_api_key_here
+     ```
+
+4. Start the development server:
+   ```bash
+   ng serve
+   ```
+
+5. Open your browser and navigate to `http://localhost:4200`
+
+## Project Structure
+
+```
+src/
+├── app/
+│   ├── core/              # Singleton services, interfaces, and models
+│   ├── features/          # Feature modules (movies, search, watchlist)
+│   ├── shared/           # Shared components, directives, and pipes
+│   └── utils/            # Helper functions and utilities
+├── assets/
+│   └── styles/          # Global styles and variables
+├── environments/        # Environment configurations
+└── tests/              # Test setup and configurations
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+## Development Guidelines
 
-## Code scaffolding
+### Code Style
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+- Follow Angular style guide
+- Use TypeScript strict mode
+- Implement SOLID principles
+- Write comprehensive documentation
+- Include unit tests for all components
 
+### Git Workflow
+
+1. Create feature branch from `main`
+2. Make atomic commits with clear messages
+3. Write tests for new features
+4. Create pull request for review
+5. Merge after approval
+
+### Testing
+
+Run tests:
 ```bash
-ng generate component component-name
+npm run test
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
-
+Generate coverage report:
 ```bash
-ng generate --help
+npm run test:coverage
 ```
 
-## Building
+## Deployment
 
-To build the project run:
+The application is automatically deployed using GitHub Actions when changes are pushed to the `main` branch.
 
-```bash
-ng build
-```
+Production URL: [https://movies-site-project.vercel.app](https://movies-site-project.vercel.app)
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+## API Documentation
 
-## Running unit tests
+This project uses the TMDB API. For detailed API documentation, visit:
+[TMDB API Documentation](https://developers.themoviedb.org/3)
 
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+## Contributing
 
-```bash
-ng test
-```
+1. Fork the repository
+2. Create your feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
 
-## Running end-to-end tests
+## License
 
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
