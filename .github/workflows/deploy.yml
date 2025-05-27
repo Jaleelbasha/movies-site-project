@@ -5,6 +5,9 @@ on:
     branches:
       - main # or your default branch name
 
+permissions:
+  contents: write
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -19,7 +22,7 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Build
         run: npm run build -- --configuration production --base-href=/movies-site-project/
@@ -27,4 +30,5 @@ jobs:
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
         with:
-          folder: dist/movies-site-project/browser # adjust this path according to your dist folder structure 
+          folder: dist/movies-site-project/browser
+          branch: gh-pages 
