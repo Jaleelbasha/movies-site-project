@@ -25,8 +25,8 @@ A responsive Angular-based movie discovery application that helps users explore,
 
 - Node.js (v18 or higher)
 - npm (v9 or higher)
-- Angular CLI
-- TMDB API Key
+- Angular CLI (latest)
+- TMDB API Key (Must login for getting api key)
 
 ## Getting Started
 
@@ -42,8 +42,7 @@ A responsive Angular-based movie discovery application that helps users explore,
    ```
 
 3. Configure environment variables:
-   - Create a `.env` file in the root directory
-   - Add your TMDB API key:
+   - Add your TMDB API key into environment file:
      ```
      TMDB_API_KEY=your_api_key_here
      ```

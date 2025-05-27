@@ -1,5 +1,6 @@
-import { Injectable } from '@angular/core';
+import { Injectable, PLATFORM_ID, Inject } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
+import { isPlatformBrowser } from '@angular/common';
 import { Movie } from '../models/movie.interface';
 
 @Injectable({
@@ -8,19 +9,26 @@ import { Movie } from '../models/movie.interface';
 export class WatchlistService {
   private readonly STORAGE_KEY = 'movie_watchlist';
   private watchlistSubject: BehaviorSubject<Movie[]>;
+  private isBrowser: boolean;
 
-  constructor() {
+  constructor(@Inject(PLATFORM_ID) private platformId: Object) {
+    this.isBrowser = isPlatformBrowser(this.platformId);
     const savedWatchlist = this.loadWatchlist();
     this.watchlistSubject = new BehaviorSubject<Movie[]>(savedWatchlist);
   }
 
   private loadWatchlist(): Movie[] {
-    const watchlistJson = localStorage.getItem(this.STORAGE_KEY);
-    return watchlistJson ? JSON.parse(watchlistJson) : [];
+    if (this.isBrowser) {
+      const watchlistJson = localStorage.getItem(this.STORAGE_KEY);
+      return watchlistJson ? JSON.parse(watchlistJson) : [];
+    }
+    return [];
   }
 
   private saveWatchlist(movies: Movie[]): void {
-    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(movies));
+    if (this.isBrowser) {
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(movies));
+    }
     this.watchlistSubject.next(movies);
   }
 

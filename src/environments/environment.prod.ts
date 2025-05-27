@@ -1,6 +1,6 @@
 export const environment = {
-  production: false,
-  tmdbApiKey: 'c49060df26c09dc4588889a8c7f33c97', // Replace this with your actual TMDB API key
+  production: true,
+  tmdbApiKey: 'YOUR_TMDB_API_KEY_HERE', // Replace this with your actual TMDB API key
   tmdbApiUrl: 'https://api.themoviedb.org/3',
   tmdbImageUrl: 'https://image.tmdb.org/t/p',
 }; 
