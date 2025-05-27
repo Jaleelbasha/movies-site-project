@@ -7,9 +7,7 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "serve:ssr:movies-site-project": "node dist/movies-site-project/server/server.mjs",
-    "deploy": "ng build --configuration production --base-href=/movies-site-project/",
-    "predeploy": "npm run build"
+    "deploy": "ng build --configuration production --base-href=/movies-site-project/"
   },
   "private": true,
   "dependencies": {
@@ -19,10 +17,7 @@
     "@angular/forms": "^17.3.12",
     "@angular/platform-browser": "^17.3.12",
     "@angular/platform-browser-dynamic": "^17.3.12",
-    "@angular/platform-server": "^17.3.12",
     "@angular/router": "^17.3.12",
-    "@angular/ssr": "^17.3.12",
-    "express": "^4.18.2",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
     "zone.js": "~0.14.3"
@@ -31,7 +26,6 @@
     "@angular-devkit/build-angular": "^17.3.12",
     "@angular/cli": "^17.3.12",
     "@angular/compiler-cli": "^17.3.12",
-    "@types/express": "^4.17.17",
     "@types/jasmine": "~5.1.0",
     "@types/node": "^18.18.0",
     "jasmine-core": "~5.6.0",
