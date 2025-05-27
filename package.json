@@ -8,7 +8,8 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "serve:ssr:movies-site-project": "node dist/movies-site-project/server/server.mjs",
-    "deploy": "ng build --configuration production --base-href=/movies-site-project/"
+    "deploy": "ng build --configuration production --base-href=/movies-site-project/",
+    "predeploy": "npm run build"
   },
   "private": true,
   "dependencies": {
