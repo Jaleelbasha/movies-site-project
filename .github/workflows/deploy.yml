@@ -21,14 +21,17 @@ jobs:
           node-version: '18'
           cache: 'npm'
 
-      - name: Install dependencies
-        run: npm install
+      - name: Clean install dependencies
+        run: |
+          rm -rf node_modules package-lock.json
+          npm install --legacy-peer-deps
 
       - name: Build
-        run: npm run build -- --configuration production --base-href=/movies-site-project/
+        run: npm run build -- --configuration production --base-href="/movies-site-project/"
 
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
         with:
-          folder: dist/movies-site-project/browser
-          branch: gh-pages 
+          folder: dist/movies-site-project
+          branch: gh-pages
+          clean: true 
