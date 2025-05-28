@@ -1,11 +1,10 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Subject, Subscription } from 'rxjs';
-import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { MovieService } from '../../core/services/movie.service';
-import { MovieCardComponent } from '../../shared/components/movie-card/movie-card.component';
 import { Movie } from '../../core/models/movie.interface';
+import { MovieCardComponent } from '../../shared/components/movie-card/movie-card.component';
+import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
 
 @Component({
   selector: 'app-search',
@@ -23,31 +22,24 @@ import { Movie } from '../../core/models/movie.interface';
             placeholder="Search for movies..."
             class="search__input"
           />
-          <span class="search__icon">🔍</span>
+          <div class="search__loading" *ngIf="loading">Searching...</div>
         </div>
       </div>
 
-      <div class="search__results" *ngIf="movies.length">
-        <h2>Search Results</h2>
-        <div class="movies-grid">
-          <app-movie-card
-            *ngFor="let movie of movies"
-            [movie]="movie"
-            (watchlistChange)="onWatchlistChange($event)"
-          ></app-movie-card>
+      <div class="search__content">
+        <div class="search__error" *ngIf="error">{{ error }}</div>
+        <div class="search__results" *ngIf="movies.length">
+          <div class="movies-grid">
+            <app-movie-card
+              *ngFor="let movie of movies"
+              [movie]="movie"
+              (watchlistChange)="onWatchlistChange($event)"
+            ></app-movie-card>
+          </div>
         </div>
-      </div>
-
-      <div class="search__empty" *ngIf="!loading && searchQuery && !movies.length">
-        No movies found for "{{ searchQuery }}"
-      </div>
-
-      <div class="search__loading" *ngIf="loading">
-        Searching...
-      </div>
-
-      <div class="search__error" *ngIf="error">
-        {{ error }}
+        <div class="search__no-results" *ngIf="!movies.length && !error && searchQuery">
+          No movies found for "{{ searchQuery }}"
+        </div>
       </div>
     </div>
   `,
@@ -58,12 +50,13 @@ import { Movie } from '../../core/models/movie.interface';
       margin: 0 auto;
 
       &__header {
-        text-align: center;
         margin-bottom: 2rem;
+        text-align: center;
 
         h1 {
           font-size: 2.5rem;
           margin-bottom: 1.5rem;
+          color: #333;
         }
       }
 
@@ -75,10 +68,10 @@ import { Movie } from '../../core/models/movie.interface';
 
       &__input {
         width: 100%;
-        padding: 1rem 1rem 1rem 3rem;
+        padding: 1rem;
         font-size: 1.1rem;
-        border: 2px solid #e0e0e0;
-        border-radius: 8px;
+        border: 2px solid #ddd;
+        border-radius: 4px;
         transition: border-color 0.2s;
 
         &:focus {
@@ -87,48 +80,30 @@ import { Movie } from '../../core/models/movie.interface';
         }
       }
 
-      &__icon {
+      &__loading {
         position: absolute;
-        left: 1rem;
+        right: 1rem;
         top: 50%;
         transform: translateY(-50%);
+        color: #6c757d;
+      }
+
+      &__error {
+        text-align: center;
+        color: #dc3545;
+        margin-bottom: 2rem;
+      }
+
+      &__no-results {
+        text-align: center;
+        color: #6c757d;
         font-size: 1.2rem;
       }
 
-      &__results {
-        h2 {
-          margin-bottom: 1rem;
-        }
-      }
-
-      &__empty,
-      &__loading,
-      &__error {
-        text-align: center;
-        padding: 2rem;
-        color: #666;
-      }
-
-      &__error {
-        color: #dc3545;
-      }
-    }
-
-    .movies-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 1.5rem;
-    }
-
-    @media (max-width: 768px) {
-      .search {
-        padding: 1rem;
-
-        &__header {
-          h1 {
-            font-size: 2rem;
-          }
-        }
+      .movies-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 2rem;
       }
     }
   `]
@@ -138,36 +113,56 @@ export class SearchComponent implements OnInit, OnDestroy {
   movies: Movie[] = [];
   loading = false;
   error: string | null = null;
-
   private searchSubject = new Subject<string>();
-  private searchSubscription: Subscription | null = null;
+  private destroy$ = new Subject<void>();
 
   constructor(private movieService: MovieService) {}
 
   ngOnInit(): void {
-    this.searchSubscription = this.searchSubject
-      .pipe(
-        debounceTime(300),
-        distinctUntilChanged()
-      )
-      .subscribe(query => {
-        if (query.trim()) {
-          this.searchMovies(query);
-        } else {
-          this.movies = [];
-        }
-      });
+    this.setupSearch();
   }
 
   ngOnDestroy(): void {
-    this.searchSubscription?.unsubscribe();
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   onSearchChange(query: string): void {
+    this.searchQuery = query;
+    if (!query.trim()) {
+      this.movies = [];
+      this.loading = false;
+      this.error = null;
+      return;
+    }
+    this.loading = true;
     this.searchSubject.next(query);
   }
 
+  private setupSearch(): void {
+    this.searchSubject.pipe(
+      debounceTime(300),
+      distinctUntilChanged(),
+      takeUntil(this.destroy$)
+    ).subscribe(query => {
+      if (!query.trim()) {
+        this.movies = [];
+        this.loading = false;
+        this.error = null;
+        return;
+      }
+      this.searchMovies(query);
+    });
+  }
+
   private searchMovies(query: string): void {
+    if (!query.trim()) {
+      this.movies = [];
+      this.loading = false;
+      this.error = null;
+      return;
+    }
+
     this.loading = true;
     this.error = null;
 
@@ -179,12 +174,17 @@ export class SearchComponent implements OnInit, OnDestroy {
       error: (err) => {
         this.error = 'Failed to search movies. Please try again later.';
         this.loading = false;
+        this.movies = [];
         console.error('Error searching movies:', err);
       }
     });
   }
 
   onWatchlistChange(event: { movie: Movie; action: 'add' | 'remove' }): void {
-    console.log(`Movie ${event.action}ed to watchlist:`, event.movie.title);
+    if (event.action === 'add') {
+      console.log('Movie added to watchlist:', event.movie.title);
+    } else {
+      console.log('Movie removed from watchlist:', event.movie.title);
+    }
   }
 } 

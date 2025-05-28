@@ -1,9 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
 import { WatchlistService } from '../../../core/services/watchlist.service';
+import { Subscription } from 'rxjs';
+import { tap } from 'rxjs/operators';
 
 @Component({
   selector: 'app-nav',
@@ -11,116 +11,91 @@ import { WatchlistService } from '../../../core/services/watchlist.service';
   imports: [CommonModule, RouterModule],
   template: `
     <nav class="nav">
-      <div class="nav__content">
-        <a routerLink="/" class="nav__logo">
-          🎬 What to Watch
+      <div class="nav__left">
+        <a routerLink="/" class="nav__logo">Movies</a>
+      </div>
+      <div class="nav__right">
+        <a 
+          routerLink="/watchlist" 
+          class="nav__watchlist"
+          routerLinkActive="active"
+        >
+          Watchlist ({{ watchlistCount }})
         </a>
-
-        <div class="nav__links">
-          <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
-            Home
-          </a>
-          <a routerLink="/search" routerLinkActive="active">
-            Search
-          </a>
-          <a routerLink="/watchlist" routerLinkActive="active" class="nav__watchlist">
-            Watchlist
-            <span class="nav__watchlist-count" *ngIf="watchlistCount$ | async as count">
-              {{ count }}
-            </span>
-          </a>
-        </div>
       </div>
     </nav>
   `,
   styles: [`
     .nav {
-      background: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 2rem;
+      background: #1a1a1a;
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-      position: sticky;
-      top: 0;
-      z-index: 1000;
+    }
 
-      &__content {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 1rem 2rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-      }
+    .nav__logo {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #fff;
+      text-decoration: none;
+      transition: color 0.2s;
 
-      &__logo {
-        font-size: 1.5rem;
-        font-weight: 600;
-        text-decoration: none;
-        color: #333;
-      }
-
-      &__links {
-        display: flex;
-        gap: 2rem;
-        align-items: center;
-
-        a {
-          text-decoration: none;
-          color: #666;
-          font-weight: 500;
-          transition: color 0.2s;
-
-          &:hover {
-            color: #007bff;
-          }
-
-          &.active {
-            color: #007bff;
-          }
-        }
-      }
-
-      &__watchlist {
-        position: relative;
-      }
-
-      &__watchlist-count {
-        position: absolute;
-        top: -8px;
-        right: -12px;
-        background: #dc3545;
-        color: white;
-        font-size: 0.75rem;
-        padding: 0.25rem 0.5rem;
-        border-radius: 12px;
-        min-width: 20px;
-        text-align: center;
+      &:hover {
+        color: #007bff;
       }
     }
 
-    @media (max-width: 768px) {
-      .nav {
-        &__content {
-          padding: 1rem;
-        }
+    .nav__watchlist {
+      color: #fff;
+      text-decoration: none;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      transition: all 0.2s;
 
-        &__logo {
-          font-size: 1.25rem;
-        }
+      &:hover {
+        background: rgba(255, 255, 255, 0.1);
+      }
 
-        &__links {
-          gap: 1rem;
+      &.active {
+        background: #007bff;
+        color: #fff;
+
+        &:hover {
+          background: #0056b3;
         }
       }
     }
   `]
 })
-export class NavComponent implements OnInit {
-  watchlistCount$!: Observable<number>;
+export class NavComponent implements OnInit, OnDestroy {
+  watchlistCount = 0;
+  private subscription: Subscription | null = null;
 
   constructor(private watchlistService: WatchlistService) {}
 
   ngOnInit(): void {
-    this.watchlistCount$ = this.watchlistService.getWatchlist().pipe(
-      map(movies => movies.length)
-    );
+    // Initial count
+    this.updateWatchlistCount();
+
+    // Subscribe to watchlist changes
+    this.subscription = this.watchlistService.getWatchlist().pipe(
+      tap(movies => {
+        this.watchlistCount = movies.length;
+      })
+    ).subscribe();
   }
-} 
+
+  ngOnDestroy(): void {
+    if (this.subscription) {
+      this.subscription.unsubscribe();
+    }
+  }
+
+  private updateWatchlistCount(): void {
+    this.watchlistService.getWatchlist().subscribe(movies => {
+      this.watchlistCount = movies.length;
+    });
+  }
+}

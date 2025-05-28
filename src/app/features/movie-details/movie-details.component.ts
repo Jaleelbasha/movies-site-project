@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
-import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { DomSanitizer, SafeResourceUrl, SafeStyle } from '@angular/platform-browser';
 import { MovieService } from '../../core/services/movie.service';
 import { WatchlistService } from '../../core/services/watchlist.service';
 import { MovieCardComponent } from '../../shared/components/movie-card/movie-card.component';
@@ -15,210 +15,134 @@ import { switchMap } from 'rxjs/operators';
   imports: [CommonModule, MovieCardComponent],
   template: `
     <div class="movie-details" *ngIf="movie">
-      <div class="movie-details__backdrop" [style.backgroundImage]="getBackdropUrl()">
-        <div class="movie-details__overlay"></div>
-      </div>
-
+      <div class="backdrop" [style]="backdropStyle"></div>
       <div class="movie-details__content">
         <div class="movie-details__header">
-          <img
-            [src]="getPosterUrl(movie.poster_path)"
-            [alt]="movie.title"
-            class="movie-details__poster"
-            (error)="onImageError($event)"
-          />
-          
+          <img [src]="posterUrl" [alt]="movie.title" class="movie-details__poster" (error)="onImageError($event)" />
           <div class="movie-details__info">
             <h1>{{ movie.title }}</h1>
-            <div class="movie-details__meta">
-              <span>{{ getYear(movie.release_date) }}</span>
-              <span>{{ movie.runtime }} min</span>
-              <span>⭐ {{ movie.vote_average.toFixed(1) }}</span>
-            </div>
-            
-            <div class="movie-details__genres">
+            <p class="tagline">{{ movie.tagline }}</p>
+            <div class="genres">
               <span *ngFor="let genre of movie.genres">{{ genre.name }}</span>
             </div>
-
-            <p class="movie-details__tagline">{{ movie.tagline }}</p>
-            <p class="movie-details__overview">{{ movie.overview }}</p>
-
-            <button
-              class="movie-details__watchlist-btn"
-              [class.active]="isInWatchlist"
-              (click)="toggleWatchlist()"
-            >
+            <p class="overview">{{ movie.overview }}</p>
+            <div class="metadata">
+              <span>{{ movie.release_date | date:'mediumDate' }}</span>
+              <span>{{ movie.runtime }} minutes</span>
+              <span>{{ movie.vote_average }}/10</span>
+            </div>
+            <button (click)="toggleWatchlist()" class="watchlist-button">
               {{ isInWatchlist ? 'Remove from Watchlist' : 'Add to Watchlist' }}
             </button>
           </div>
         </div>
 
-        <div class="movie-details__trailer" *ngIf="trailerUrl">
-          <h2>Trailer</h2>
-          <iframe
-            [src]="trailerUrl"
-            frameborder="0"
-            allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
-            allowfullscreen
-          ></iframe>
-        </div>
-
-        <div class="movie-details__cast" *ngIf="movie.credits?.cast?.length">
+        <div class="cast-section" *ngIf="movie.credits?.cast?.length">
           <h2>Cast</h2>
           <div class="cast-list">
-            <div class="cast-item" *ngFor="let actor of movie.credits.cast.slice(0, 6)">
-              <img
-                [src]="getProfileUrl(actor.profile_path)"
-                [alt]="actor.name"
-                (error)="onProfileImageError($event)"
-              />
-              <h3>{{ actor.name }}</h3>
-              <p>{{ actor.character }}</p>
+            <div *ngFor="let actor of movie.credits.cast" class="cast-member">
+              <img [src]="getProfileUrl(actor.profile_path)" [alt]="actor.name" (error)="onProfileImageError($event)" />
+              <div class="cast-info">
+                <span class="actor-name">{{ actor.name }}</span>
+                <span class="character-name">{{ actor.character }}</span>
+              </div>
             </div>
           </div>
         </div>
 
-        <div class="movie-details__similar" *ngIf="similarMovies.length">
+        <div class="trailer-section" *ngIf="trailerUrl">
+          <h2>Trailer</h2>
+          <iframe
+            [src]="trailerUrl"
+            frameborder="0"
+            allowfullscreen
+            class="trailer-iframe"
+          ></iframe>
+        </div>
+
+        <div class="similar-movies" *ngIf="similarMovies?.length">
           <h2>Similar Movies</h2>
-          <div class="similar-movies">
-            <app-movie-card
-              *ngFor="let movie of similarMovies"
-              [movie]="movie"
-              (watchlistChange)="onWatchlistChange($event)"
-            ></app-movie-card>
+          <div class="similar-movies-grid">
+            <div *ngFor="let similar of similarMovies" class="similar-movie">
+              <img [src]="getPosterUrl(similar.poster_path)" [alt]="similar.title" (error)="onImageError($event)" />
+              <h3>{{ similar.title }}</h3>
+              <p>{{ similar.release_date | date:'y' }}</p>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="loading" *ngIf="loading">Loading...</div>
-    <div class="error" *ngIf="error">{{ error }}</div>
+    <div *ngIf="loading" class="loading">Loading...</div>
+    <div *ngIf="error" class="error">{{ error }}</div>
   `,
   styles: [`
     .movie-details {
       position: relative;
       min-height: 100vh;
+    }
 
-      &__backdrop {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100vh;
-        background-size: cover;
-        background-position: center;
-        z-index: -1;
-      }
+    .backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100vh;
+      background-size: cover;
+      background-position: center;
+      filter: brightness(0.3);
+      z-index: -1;
+    }
 
-      &__overlay {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.7);
-        backdrop-filter: blur(10px);
-      }
+    .movie-details__content {
+      padding: 2rem;
+      color: white;
+      position: relative;
+      z-index: 1;
+    }
 
-      &__content {
-        position: relative;
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 2rem;
-        color: black;
-      }
+    .movie-details__header {
+      display: flex;
+      gap: 2rem;
+      margin-bottom: 2rem;
+    }
 
-      &__header {
-        display: grid;
-        grid-template-columns: 300px 1fr;
-        gap: 2rem;
-        margin-bottom: 2rem;
-      }
+    .movie-details__poster {
+      width: 300px;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
 
-      &__poster {
-        width: 100%;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-      }
+    .movie-details__info {
+      flex: 1;
+    }
 
-      &__info {
-        h1 {
-          font-size: 2.5rem;
-          margin-bottom: 1rem;
-        }
-      }
+    .tagline {
+      font-style: italic;
+      color: #ccc;
+      margin-bottom: 1rem;
+    }
 
-      &__meta {
-        display: flex;
-        gap: 1rem;
-        margin-bottom: 1rem;
-        color: #ccc;
-      }
+    .genres {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
 
-      &__genres {
-        display: flex;
-        gap: 0.5rem;
-        margin-bottom: 1rem;
+    .genres span {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 0.25rem 0.75rem;
+      border-radius: 16px;
+    }
 
-        span {
-          padding: 0.25rem 0.75rem;
-          background: rgba(255, 255, 255, 0.1);
-          border-radius: 16px;
-          font-size: 0.875rem;
-        }
-      }
+    .metadata {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
 
-      &__tagline {
-        font-style: italic;
-        color: #ccc;
-        margin-bottom: 1rem;
-      }
-
-      &__overview {
-        line-height: 1.6;
-        margin-bottom: 1.5rem;
-      }
-
-      &__watchlist-btn {
-        padding: 0.75rem 1.5rem;
-        border: none;
-        border-radius: 4px;
-        background: #007bff;
-        color: white;
-        cursor: pointer;
-        transition: background-color 0.2s;
-
-        &:hover {
-          background: #0056b3;
-        }
-
-        &.active {
-          background: #dc3545;
-        }
-      }
-
-      &__trailer {
-        margin-bottom: 2rem;
-
-        h2 {
-          margin-bottom: 1rem;
-        }
-
-        iframe {
-          width: 100%;
-          height: 0;
-          padding-bottom: 56.25%;
-          border-radius: 8px;
-        }
-      }
-
-      &__cast {
-        margin-bottom: 2rem;
-
-        h2 {
-          margin-bottom: 1rem;
-        }
-      }
+    .cast-section {
+      margin: 2rem 0;
     }
 
     .cast-list {
@@ -227,65 +151,90 @@ import { switchMap } from 'rxjs/operators';
       gap: 1rem;
     }
 
-    .cast-item {
+    .cast-member {
       text-align: center;
+    }
 
-      img {
-        width: 100%;
-        aspect-ratio: 2/3;
-        object-fit: cover;
-        border-radius: 4px;
-        margin-bottom: 0.5rem;
-      }
+    .cast-member img {
+      width: 120px;
+      height: 180px;
+      object-fit: cover;
+      border-radius: 4px;
+      margin-bottom: 0.5rem;
+    }
 
-      h3 {
-        font-size: 1rem;
-        margin-bottom: 0.25rem;
-      }
+    .trailer-section {
+      margin: 2rem 0;
+    }
 
-      p {
-        font-size: 0.875rem;
-        color: #ccc;
-      }
+    .trailer-iframe {
+      width: 100%;
+      height: 500px;
+      border-radius: 8px;
     }
 
     .similar-movies {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 1.5rem;
+      margin: 2rem 0;
     }
 
-    .loading,
-    .error {
+    .similar-movies-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 1rem;
+    }
+
+    .similar-movie {
       text-align: center;
-      padding: 2rem;
+    }
+
+    .similar-movie img {
+      width: 100%;
+      border-radius: 4px;
+      margin-bottom: 0.5rem;
+    }
+
+    .loading {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      font-size: 1.5rem;
       color: white;
     }
 
     .error {
-      color: #dc3545;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      font-size: 1.5rem;
+      color: red;
     }
 
-    @media (max-width: 768px) {
-      .movie-details {
-        &__header {
-          grid-template-columns: 1fr;
-        }
+    .watchlist-button {
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 4px;
+      background: #e50914;
+      color: white;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
 
-        &__poster {
-          max-width: 300px;
-          margin: 0 auto;
-        }
-      }
+    .watchlist-button:hover {
+      background: #f40612;
     }
   `]
 })
 export class MovieDetailsComponent implements OnInit {
   movie: MovieDetails | null = null;
   similarMovies: Movie[] = [];
-  trailerUrl: SafeResourceUrl | null = null;
   loading = true;
   error: string | null = null;
+  isInWatchlist = false;
+  backdropStyle: SafeStyle | null = null;
+  posterUrl: SafeResourceUrl | null = null;
+  trailerUrl: SafeResourceUrl | null = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -295,96 +244,115 @@ export class MovieDetailsComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.route.params.pipe(
-      switchMap(params => this.movieService.getMovieDetails(params['id']))
-    ).subscribe({
+    const movieId = this.route.snapshot.paramMap.get('id');
+    if (movieId) {
+      this.loadMovieDetails(movieId);
+    }
+  }
+
+  private loadMovieDetails(movieId: string): void {
+    this.loading = true;
+    this.error = null;
+
+    this.movieService.getMovieDetails(Number(movieId)).subscribe({
       next: (movie) => {
         this.movie = movie;
-        this.loading = false;
+        this.setBackdropStyle();
+        this.setPosterUrl();
         this.setTrailerUrl();
-        this.loadSimilarMovies();
+        this.checkWatchlistStatus();
+        this.loadSimilarMovies(movieId);
       },
-      error: (err) => {
-        this.error = 'Failed to load movie details. Please try again later.';
+      error: (error) => {
+        this.error = 'Failed to load movie details';
         this.loading = false;
-        console.error('Error loading movie details:', err);
       }
     });
   }
 
-  get isInWatchlist(): boolean {
-    return this.movie ? this.watchlistService.isInWatchlist(this.movie.id) : false;
+  private loadSimilarMovies(movieId: string): void {
+    this.movieService.getSimilarMovies(Number(movieId)).subscribe({
+      next: (response) => {
+        this.similarMovies = response.results;
+        this.loading = false;
+      },
+      error: (error) => {
+        this.error = 'Failed to load similar movies';
+        this.loading = false;
+      }
+    });
   }
 
-  toggleWatchlist(): void {
-    if (!this.movie) return;
-
-    if (this.isInWatchlist) {
-      this.watchlistService.removeFromWatchlist(this.movie.id);
+  private setBackdropStyle(): void {
+    if (this.movie?.backdrop_path) {
+      const backdropUrl = `${environment.tmdbImageUrl}/original${this.movie.backdrop_path}`;
+      this.backdropStyle = this.sanitizer.bypassSecurityTrustStyle(`background-image: url("${backdropUrl}")`);
     } else {
-      this.watchlistService.addToWatchlist(this.movie);
+      this.backdropStyle = this.sanitizer.bypassSecurityTrustStyle('none');
     }
   }
 
-  getBackdropUrl(): string {
-    if (!this.movie?.backdrop_path) return 'none';
-    return `url(${environment.tmdbImageUrl}/original${this.movie.backdrop_path})`;
-  }
-
-  getPosterUrl(path: string): string {
-    return path
-      ? `${environment.tmdbImageUrl}/w500${path}`
-      : 'assets/images/no-poster.jpg';
-  }
-
-  getProfileUrl(path: string): string {
-    return path
-      ? `${environment.tmdbImageUrl}/w185${path}`
-      : 'assets/images/no-profile.jpg';
-  }
-
-  getYear(date: string): string {
-    return date ? new Date(date).getFullYear().toString() : 'N/A';
+  private setPosterUrl(): void {
+    if (this.movie?.poster_path) {
+      const posterUrl = `${environment.tmdbImageUrl}/w500${this.movie.poster_path}`;
+      this.posterUrl = this.sanitizer.bypassSecurityTrustResourceUrl(posterUrl);
+    } else {
+      this.posterUrl = this.sanitizer.bypassSecurityTrustResourceUrl('/assets/images/no-poster.jpg');
+    }
   }
 
   private setTrailerUrl(): void {
-    if (!this.movie?.videos?.results) return;
-
-    const trailer = this.movie.videos.results.find(
-      video => video.site === 'YouTube' && video.type === 'Trailer'
+    const trailer = this.movie?.videos?.results?.find(
+      (video: any) => video.site === 'YouTube' && video.type === 'Trailer'
     );
-
     if (trailer) {
-      this.trailerUrl = this.sanitizer.bypassSecurityTrustResourceUrl(
-        `https://www.youtube.com/embed/${trailer.key}`
-      );
+      const trailerUrl = `https://www.youtube.com/embed/${trailer.key}`;
+      this.trailerUrl = this.sanitizer.bypassSecurityTrustResourceUrl(trailerUrl);
+    } else {
+      this.trailerUrl = null;
     }
   }
 
-  private loadSimilarMovies(): void {
-    if (!this.movie) return;
+  getPosterUrl(posterPath: string | null): SafeResourceUrl {
+    if (posterPath) {
+      const url = `${environment.tmdbImageUrl}/w500${posterPath}`;
+      return this.sanitizer.bypassSecurityTrustResourceUrl(url);
+    }
+    return this.sanitizer.bypassSecurityTrustResourceUrl('/assets/images/no-poster.jpg');
+  }
 
-    this.movieService.getSimilarMovies(this.movie.id).subscribe({
-      next: (response) => {
-        this.similarMovies = response.results.slice(0, 6);
-      },
-      error: (err) => {
-        console.error('Error loading similar movies:', err);
-      }
-    });
+  getProfileUrl(profilePath: string | null): SafeResourceUrl {
+    if (profilePath) {
+      const url = `${environment.tmdbImageUrl}/w185${profilePath}`;
+      return this.sanitizer.bypassSecurityTrustResourceUrl(url);
+    }
+    return this.sanitizer.bypassSecurityTrustResourceUrl('/assets/images/no-profile.jpg');
   }
 
   onImageError(event: Event): void {
     const img = event.target as HTMLImageElement;
-    img.src = 'assets/images/no-poster.jpg';
+    img.src = '/assets/images/no-poster.jpg';
   }
 
   onProfileImageError(event: Event): void {
     const img = event.target as HTMLImageElement;
-    img.src = 'assets/images/no-profile.jpg';
+    img.src = '/assets/images/no-profile.jpg';
   }
 
-  onWatchlistChange(event: { movie: Movie; action: 'add' | 'remove' }): void {
-    console.log(`Similar movie ${event.action}ed to watchlist:`, event.movie.title);
+  private checkWatchlistStatus(): void {
+    if (this.movie) {
+      this.isInWatchlist = this.watchlistService.isInWatchlist(this.movie.id);
+    }
+  }
+
+  toggleWatchlist(): void {
+    if (this.movie) {
+      if (this.isInWatchlist) {
+        this.watchlistService.removeFromWatchlist(this.movie.id);
+      } else {
+        this.watchlistService.addToWatchlist(this.movie);
+      }
+      this.checkWatchlistStatus();
+    }
   }
 } 

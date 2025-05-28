@@ -1,16 +1,19 @@
 import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
 import { NavComponent } from './shared/components/nav/nav.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, NavComponent],
+  imports: [CommonModule, RouterOutlet, NavComponent],
   template: `
-    <app-nav></app-nav>
-    <main>
-      <router-outlet></router-outlet>
-    </main>
+    <div class="app">
+      <app-nav></app-nav>
+      <main class="app__main">
+        <router-outlet></router-outlet>
+      </main>
+    </div>
   `,
   styles: [`
     :host {
@@ -19,8 +22,16 @@ import { NavComponent } from './shared/components/nav/nav.component';
       background: #f8f9fa;
     }
 
-    main {
+    .app {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .app__main {
+      flex: 1;
       min-height: calc(100vh - 64px);
+      padding-top: 1rem;
     }
   `]
 })
