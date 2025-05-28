@@ -27,6 +27,7 @@ A responsive Angular-based movie discovery application that helps users explore,
 - npm (v9 or higher)
 - Angular CLI (latest)
 - TMDB API Key (Must login for getting api key)
+- VPN is mandatory to access TMDB site
 
 ## Getting Started
 
