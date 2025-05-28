@@ -107,7 +107,7 @@ export class WatchlistComponent implements OnInit, OnDestroy {
       });
   }
 
-  onWatchlistChange(event: { movie: Movie; action: 'remove' }): void {
+  onWatchlistChange(event: { movie: Movie; action: 'add' | 'remove' }): void {
     if (event.action === 'remove') {
       this.movies = this.movies.filter(m => m.id !== event.movie.id);
     }
