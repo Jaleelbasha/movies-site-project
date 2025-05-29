@@ -5,13 +5,14 @@ import { MovieService } from '../../core/services/movie.service';
 import { Movie } from '../../core/models/movie.interface';
 import { MovieCardComponent } from '../../shared/components/movie-card/movie-card.component';
 import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
+import { InfiniteScrollDirective } from '../../shared/directives/infinite-scroll.directive';
 
 @Component({
   selector: 'app-search',
   standalone: true,
-  imports: [CommonModule, FormsModule, MovieCardComponent],
+  imports: [CommonModule, FormsModule, MovieCardComponent, InfiniteScrollDirective],
   template: `
-    <div class="search">
+    <div class="search" appInfiniteScroll (scrolled)="onScroll()">
       <div class="search__header">
         <h1>Search Movies</h1>
         <div class="search__input-wrapper">
@@ -40,6 +41,10 @@ import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
         <div class="search__no-results" *ngIf="!movies.length && !error && searchQuery">
           No movies found for "{{ searchQuery }}"
         </div>
+      </div>
+
+      <div class="search__loading-more" *ngIf="isLoadingMore">
+        Loading more movies...
       </div>
     </div>
   `,
@@ -88,6 +93,12 @@ import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
         color: #6c757d;
       }
 
+      &__loading-more {
+        text-align: center;
+        padding: 1rem;
+        color: #6c757d;
+      }
+
       &__error {
         text-align: center;
         color: #dc3545;
@@ -112,7 +123,9 @@ export class SearchComponent implements OnInit, OnDestroy {
   searchQuery = '';
   movies: Movie[] = [];
   loading = false;
+  isLoadingMore = false;
   error: string | null = null;
+  currentPage = 1;
   private searchSubject = new Subject<string>();
   private destroy$ = new Subject<void>();
 
@@ -129,6 +142,7 @@ export class SearchComponent implements OnInit, OnDestroy {
 
   onSearchChange(query: string): void {
     this.searchQuery = query;
+    this.currentPage = 1;
     if (!query.trim()) {
       this.movies = [];
       this.loading = false;
@@ -155,7 +169,7 @@ export class SearchComponent implements OnInit, OnDestroy {
     });
   }
 
-  private searchMovies(query: string): void {
+  private searchMovies(query: string, page: number = 1): void {
     if (!query.trim()) {
       this.movies = [];
       this.loading = false;
@@ -163,21 +177,41 @@ export class SearchComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.loading = true;
+    const isNewSearch = page === 1;
+    this.loading = isNewSearch;
     this.error = null;
 
-    this.movieService.searchMovies(query).subscribe({
+    if (!isNewSearch) {
+      this.isLoadingMore = true;
+    }
+
+    this.movieService.searchMovies(query, page).subscribe({
       next: (response) => {
-        this.movies = response.results;
+        if (isNewSearch) {
+          this.movies = response.results;
+        } else {
+          this.movies = [...this.movies, ...response.results];
+        }
         this.loading = false;
+        this.isLoadingMore = false;
       },
       error: (err) => {
         this.error = 'Failed to search movies. Please try again later.';
         this.loading = false;
-        this.movies = [];
+        this.isLoadingMore = false;
+        if (isNewSearch) {
+          this.movies = [];
+        }
         console.error('Error searching movies:', err);
       }
     });
+  }
+
+  onScroll(): void {
+    if (this.loading || this.isLoadingMore || !this.searchQuery.trim()) return;
+    
+    this.currentPage++;
+    this.searchMovies(this.searchQuery, this.currentPage);
   }
 
   onWatchlistChange(event: { movie: Movie; action: 'add' | 'remove' }): void {

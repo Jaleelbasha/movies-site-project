@@ -3,15 +3,16 @@ import { CommonModule } from '@angular/common';
 import { MovieService } from '../../core/services/movie.service';
 import { MovieCardComponent } from '../../shared/components/movie-card/movie-card.component';
 import { Movie } from '../../core/models/movie.interface';
+import { InfiniteScrollDirective } from '../../shared/directives/infinite-scroll.directive';
 
 type MoodType = 'feel-good' | 'action-fix' | 'mind-benders';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, MovieCardComponent],
+  imports: [CommonModule, MovieCardComponent, InfiniteScrollDirective],
   template: `
-    <div class="home">
+    <div class="home" appInfiniteScroll (scrolled)="onScroll()">
       <header class="home__header">
         <h1>What Should I Watch Tonight?</h1>
         <p>Discover your next favorite movie based on your mood</p>
@@ -148,6 +149,8 @@ export class HomeComponent implements OnInit {
   selectedMood: MoodType | null = null;
   loading = false;
   error: string | null = null;
+  currentPage = 1;
+  isLoadingMore = false;
 
   constructor(private movieService: MovieService) {}
 
@@ -155,17 +158,27 @@ export class HomeComponent implements OnInit {
     this.loadPopularMovies();
   }
 
-  loadPopularMovies(): void {
-    this.loading = true;
+  loadPopularMovies(page: number = 1): void {
+    if (this.isLoadingMore) return;
+    
+    this.loading = page === 1;
     this.error = null;
-    this.movieService.getPopularMovies().subscribe({
+    this.isLoadingMore = true;
+
+    this.movieService.getPopularMovies(page).subscribe({
       next: (response) => {
-        this.movies = response.results;
+        if (page === 1) {
+          this.movies = response.results;
+        } else {
+          this.movies = [...this.movies, ...response.results];
+        }
         this.loading = false;
+        this.isLoadingMore = false;
       },
       error: (err) => {
         this.error = 'Failed to load movies. Please try again later.';
         this.loading = false;
+        this.isLoadingMore = false;
         console.error('Error loading movies:', err);
       }
     });
@@ -173,20 +186,45 @@ export class HomeComponent implements OnInit {
 
   selectMood(mood: MoodType): void {
     this.selectedMood = mood;
-    this.loading = true;
-    this.error = null;
+    this.currentPage = 1;
+    this.loadMoviesByMood(mood);
+  }
 
-    this.movieService.getMoviesByMood(mood).subscribe({
+  loadMoviesByMood(mood: MoodType, page: number = 1): void {
+    if (this.isLoadingMore) return;
+
+    this.loading = page === 1;
+    this.error = null;
+    this.isLoadingMore = true;
+
+    this.movieService.getMoviesByMood(mood, page).subscribe({
       next: (response) => {
-        this.movies = response.results;
+        if (page === 1) {
+          this.movies = response.results;
+        } else {
+          this.movies = [...this.movies, ...response.results];
+        }
         this.loading = false;
+        this.isLoadingMore = false;
       },
       error: (err) => {
         this.error = 'Failed to load movies. Please try again later.';
         this.loading = false;
+        this.isLoadingMore = false;
         console.error('Error loading movies by mood:', err);
       }
     });
+  }
+
+  onScroll(): void {
+    if (this.loading || this.isLoadingMore) return;
+    
+    this.currentPage++;
+    if (this.selectedMood) {
+      this.loadMoviesByMood(this.selectedMood, this.currentPage);
+    } else {
+      this.loadPopularMovies(this.currentPage);
+    }
   }
 
   getMoodTitle(): string {
@@ -198,7 +236,10 @@ export class HomeComponent implements OnInit {
   }
 
   onWatchlistChange(event: { movie: Movie; action: 'add' | 'remove' }): void {
-    // You can add notifications or other UI feedback here
-    console.log(`Movie ${event.action}ed to watchlist:`, event.movie.title);
+    if (event.action === 'add') {
+      console.log('Movie added to watchlist:', event.movie.title);
+    } else {
+      console.log('Movie removed from watchlist:', event.movie.title);
+    }
   }
 } 
