@@ -16,8 +16,15 @@ import { tap } from 'rxjs/operators';
       </div>
       <div class="nav__right">
         <a 
+          routerLink="/search" 
+          class="nav__link"
+          routerLinkActive="active"
+        >
+          Search
+        </a>
+        <a 
           routerLink="/watchlist" 
-          class="nav__watchlist"
+          class="nav__link"
           routerLinkActive="active"
         >
           Watchlist ({{ watchlistCount }})
@@ -47,7 +54,12 @@ import { tap } from 'rxjs/operators';
       }
     }
 
-    .nav__watchlist {
+    .nav__right {
+      display: flex;
+      gap: 1rem;
+    }
+
+    .nav__link {
       color: #fff;
       text-decoration: none;
       padding: 0.5rem 1rem;

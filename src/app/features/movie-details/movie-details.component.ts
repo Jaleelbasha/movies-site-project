@@ -96,7 +96,7 @@ import { switchMap } from 'rxjs/operators';
 
     .movie-details__content {
       padding: 2rem;
-      color: white;
+      color: black;
       position: relative;
       z-index: 1;
     }
